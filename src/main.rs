@@ -14,6 +14,8 @@ mod texture;
 mod perlin;
 mod quad;
 mod constant_medium;
+#[cfg(feature = "gpu")]
+mod gpu;
 
 use std::rc::Rc;
 use color::Color;
@@ -407,6 +409,87 @@ fn cornell_smoke() {
     cam.render(&world);
 }
 
+#[cfg(feature = "gpu")]
+fn bouncing_spheres_gpu() {
+    use gpu::{GpuCamera, GpuSceneBuilder, render_gpu};
+
+    let mut b = GpuSceneBuilder::new();
+
+    // Ground: same overlapping pair as CPU random_scene() — checker first, gray second.
+    let ground_checker = b.add_checker_colors(0.32, Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9));
+    let ground_checker_mat = b.add_lambertian(ground_checker);
+    b.add_sphere(Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_checker_mat);
+    let ground_gray = b.add_lambertian_color(Color::new(0.5, 0.5, 0.5));
+    b.add_sphere(Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_gray);
+
+    for a in -11..11 {
+        for bb in -11..11 {
+            let choose_mat = common::random_double();
+            let center = Point3::new(
+                a as f64 + 0.9 * common::random_double(),
+                0.2,
+                bb as f64 + 0.9 * common::random_double(),
+            );
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                if choose_mat < 0.8 {
+                    let albedo = Color::random() * Color::random();
+                    let mat = b.add_lambertian_color(albedo);
+                    let center2 = center + vec3::Vec3::new(0.0, common::random_double_range(0.0, 0.5), 0.0);
+                    b.add_moving_sphere(center, center2, 0.2, mat);
+                } else if choose_mat < 0.95 {
+                    let albedo = Color::random_range(0.5, 1.0);
+                    let fuzz = common::random_double_range(0.0, 0.5);
+                    let mat = b.add_metal(albedo, fuzz);
+                    b.add_sphere(center, 0.2, mat);
+                } else {
+                    let mat = b.add_dielectric(1.5);
+                    b.add_sphere(center, 0.2, mat);
+                }
+            }
+        }
+    }
+
+    let m1 = b.add_dielectric(1.5);
+    b.add_sphere(Point3::new(0.0, 1.0, 0.0), 1.0, m1);
+    let m2 = b.add_lambertian_color(Color::new(0.4, 0.2, 0.1));
+    b.add_sphere(Point3::new(-4.0, 1.0, 0.0), 1.0, m2);
+    let m3 = b.add_metal(Color::new(0.7, 0.6, 0.5), 0.0);
+    b.add_sphere(Point3::new(4.0, 1.0, 0.0), 1.0, m3);
+
+    let scene = b.build();
+    let cam = GpuCamera::new(
+        400, 100, 50,
+        Point3::new(13.0, 2.0, 3.0),
+        Point3::new(0.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 1.0, 0.0),
+        20.0, 3.0 / 2.0, 0.1, 10.0,
+        Color::new(0.70, 0.80, 1.00),
+    );
+    render_gpu(scene, cam).expect("GPU render failed");
+}
+
+#[cfg(feature = "gpu")]
+fn checkered_spheres_gpu() {
+    use gpu::{GpuCamera, GpuSceneBuilder, render_gpu};
+
+    let mut b = GpuSceneBuilder::new();
+    let checker = b.add_checker_colors(0.32, Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9));
+    let mat = b.add_lambertian(checker);
+    b.add_sphere(Point3::new(0.0, -10.0, 0.0), 10.0, mat);
+    b.add_sphere(Point3::new(0.0,  10.0, 0.0), 10.0, mat);
+
+    let scene = b.build();
+    let cam = GpuCamera::new(
+        400, 100, 50,
+        Point3::new(13.0, 2.0, 3.0),
+        Point3::new(0.0, 0.0, 0.0),
+        vec3::Vec3::new(0.0, 1.0, 0.0),
+        20.0, 16.0 / 9.0, 0.1, 10.0,
+        Color::new(0.70, 0.80, 1.00),
+    );
+    render_gpu(scene, cam).expect("GPU render failed");
+}
+
 fn main() {
     match 8 {
         1 => bouncing_spheres(),
@@ -417,6 +500,8 @@ fn main() {
         6 => simple_light(),
         7 => cornell_box(),
         8 => cornell_smoke(),
+        #[cfg(feature = "gpu")] 9 => bouncing_spheres_gpu(),
+        #[cfg(feature = "gpu")] 10 => checkered_spheres_gpu(),
         _ => {}
     }
 }

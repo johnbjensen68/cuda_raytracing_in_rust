@@ -3,6 +3,10 @@ name = "cuda_raytracing_in_rust"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+gpu = ["dep:cudarc"]
+
 [dependencies]
 rand = "0.10.1"
 image = "0.25"
+cudarc = { version = "0.19", optional = true, default-features = false, features = ["driver", "nvrtc", "std", "fallback-dynamic-loading", "cuda-12080"] }
