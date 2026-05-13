@@ -1,5 +1,5 @@
 [package]
-name = "ray-tracing"
+name = "cuda_raytracing_in_rust"
 version = "0.1.0"
 edition = "2024"
 

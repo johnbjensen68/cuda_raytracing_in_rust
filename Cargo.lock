@@ -243,6 +243,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
+name = "cuda_raytracing_in_rust"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "rand 0.10.1",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -861,14 +869,6 @@ dependencies = [
  "rav1e",
  "rayon",
  "rgb",
-]
-
-[[package]]
-name = "ray-tracing"
-version = "0.1.0"
-dependencies = [
- "image",
- "rand 0.10.1",
 ]
 
 [[package]]
